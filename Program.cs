@@ -1,4 +1,6 @@
 using foundWhatYouLost.Data;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -8,6 +10,10 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=fwyl_db.db"));
+
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+    options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
 
@@ -36,7 +42,7 @@ app.MapGet("/users/{id:Guid}", async (Guid id) => {
     return Results.Accepted("/uses", user);
 });
 
-app.MapPost("/users", async (User user) =>
+app.MapPost("/users",  async (User user) =>
 {
     var newUser = new User(
         Guid.CreateVersion7(),
@@ -109,5 +115,9 @@ app.MapPost("/items", async (Item item) => {
     await _db.SaveChangesAsync();
     return Results.Created("/items", newItem);
 });
+
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Run();
