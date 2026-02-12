@@ -43,7 +43,7 @@ async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
 };
 
 app.MapPost("/users",  CreateUser);
-async Task<Results<Ok<User>, NotFound>> CreateUser(User user)
+async Task<Results<Created<User>, NotFound>> CreateUser(User user)
 {
     var newUser = new User(
         Guid.CreateVersion7(),
@@ -57,7 +57,7 @@ async Task<Results<Ok<User>, NotFound>> CreateUser(User user)
     await _db.SaveChangesAsync();
 
     return newUser is not null
-        ? TypedResults.Ok(newUser)
+        ? TypedResults.Created("/users/", newUser)
         : TypedResults.NotFound();
 };
 
@@ -107,7 +107,7 @@ async Task<Results<Ok<Item>, NotFound, BadRequest<string>>> GetItemById(Guid id)
 };
 
 app.MapPost("/items", CreateItem);
-async Task<Results<Ok<Item>, NotFound>> CreateItem(Item item)
+async Task<Results<Created<Item>, NotFound>> CreateItem(Item item)
 {
     var newItem = new Item(
         Guid.CreateVersion7(),
@@ -125,10 +125,9 @@ async Task<Results<Ok<Item>, NotFound>> CreateItem(Item item)
     _db.Items.Add(newItem);
     await _db.SaveChangesAsync();
     return newItem is not null
-        ? TypedResults.Ok(newItem)
+        ? TypedResults.Created("/items", newItem)
         : TypedResults.NotFound();
 }
-
 
 app.UseAuthentication();
 app.UseAuthorization();
