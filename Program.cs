@@ -31,18 +31,19 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.MapGet("/users", async () => await _db.Users.ToListAsync());
-app.MapGet("/users/{id:Guid}", async (Guid id) => {
+
+app.MapGet("/users/{id:Guid}", GetUserById);
+async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
+{
     var user = await _db.Users.FindAsync(id);
 
-    if(user == null)
-    {
-        return null;
-    }
+    return user is not null
+        ? TypedResults.Ok(user)
+        : TypedResults.NotFound();
+};
 
-    return Results.Accepted("/uses", user);
-});
-
-app.MapPost("/users",  async (User user) =>
+app.MapPost("/users",  CreateUser);
+async Task<Results<Ok<User>, NotFound>> CreateUser(User user)
 {
     var newUser = new User(
         Guid.CreateVersion7(),
@@ -54,16 +55,20 @@ app.MapPost("/users",  async (User user) =>
 
     _db.Users.Add(newUser);
     await _db.SaveChangesAsync();
-    return Results.Created("/users", newUser);
-});
 
-app.MapPut("/users/{id:guid}", async (Guid id, User user) =>
+    return newUser is not null
+        ? TypedResults.Ok(newUser)
+        : TypedResults.NotFound();
+};
+
+app.MapPut("/users/{id:guid}", UpdateUser);
+async Task<Results<Ok<User>, NotFound, BadRequest<string>>> UpdateUser(Guid id, User user)
 {
-    var findUser = await _db.Users.FirstOrDefaultAsync(u=> u.Id == id);
+    var findUser = await _db.Users.FindAsync(id);
 
     if (findUser == null)
     {
-        return Results.BadRequest($"User with id: {id} coul not be found");
+        return TypedResults.BadRequest($"User with id: {id} coul not be found");
     }
 
     _db.Entry(findUser).State = EntityState.Detached;
@@ -79,25 +84,31 @@ app.MapPut("/users/{id:guid}", async (Guid id, User user) =>
     _db.Users.Update(updateUser);
     await _db.SaveChangesAsync();
 
-    return Results.Accepted("/users/{id}", updateUser);
-});
+    return updateUser is not null
+     ? TypedResults.Ok(updateUser)
+     : TypedResults.NotFound();
+};
 
 app.MapGet("/items", async () => await _db.Items.ToListAsync());
-app.MapGet("/items/{id:guid}", async (Guid id) =>
-{
-    var oneItem = await _db.Items.FindAsync(id);
 
-    if(oneItem == null)
+app.MapGet("/items/{id:guid}", GetItemById);
+async Task<Results<Ok<Item>, NotFound, BadRequest<string>>> GetItemById(Guid id)
+{
+    var singleItem = await _db.Items.FindAsync(id);
+
+    if(singleItem == null)
     {
-        return null;
+        return TypedResults.BadRequest($"Could not find an item wth id: {id}");
     }
 
-    return Results.Accepted("/items/{id}", oneItem);
+    return singleItem is not null
+        ? TypedResults.Ok(singleItem)
+        : TypedResults.NotFound();
+};
 
-});
-
-app.MapPost("/items", async (Item item) => {
-
+app.MapPost("/items", CreateItem);
+async Task<Results<Ok<Item>, NotFound>> CreateItem(Item item)
+{
     var newItem = new Item(
         Guid.CreateVersion7(),
         item.Latitude,
@@ -113,8 +124,10 @@ app.MapPost("/items", async (Item item) => {
 
     _db.Items.Add(newItem);
     await _db.SaveChangesAsync();
-    return Results.Created("/items", newItem);
-});
+    return newItem is not null
+        ? TypedResults.Ok(newItem)
+        : TypedResults.NotFound();
+}
 
 
 app.UseAuthentication();
