@@ -62,13 +62,13 @@ async Task<Results<Created<User>, NotFound>> CreateUser(User user)
 };
 
 app.MapPut("/users/{id:guid}", UpdateUser);
-async Task<Results<Ok<User>, NotFound, BadRequest<string>>> UpdateUser(Guid id, User user)
+async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(Guid id, User user)
 {
     var findUser = await _db.Users.FindAsync(id);
 
     if (findUser == null)
     {
-        return TypedResults.BadRequest($"User with id: {id} coul not be found");
+        return TypedResults.NoContent();
     }
 
     _db.Entry(findUser).State = EntityState.Detached;
@@ -92,13 +92,13 @@ async Task<Results<Ok<User>, NotFound, BadRequest<string>>> UpdateUser(Guid id, 
 app.MapGet("/items", async () => await _db.Items.ToListAsync());
 
 app.MapGet("/items/{id:guid}", GetItemById);
-async Task<Results<Ok<Item>, NotFound, BadRequest<string>>> GetItemById(Guid id)
+async Task<Results<Ok<Item>, NotFound, NoContent>> GetItemById(Guid id)
 {
     var singleItem = await _db.Items.FindAsync(id);
 
     if(singleItem == null)
     {
-        return TypedResults.BadRequest($"Could not find an item wth id: {id}");
+        return TypedResults.NoContent();
     }
 
     return singleItem is not null
