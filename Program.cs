@@ -11,8 +11,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=fwyl_db.db"));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
-    options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<User>()
     .AddEntityFrameworkStores<AppDbContext>();
 
 var app = builder.Build();
@@ -32,7 +31,7 @@ app.UseHttpsRedirection();
 
 app.MapGet("/users", async () => await _db.Users.ToListAsync());
 
-app.MapGet("/users/{id:Guid}", GetUserById);
+app.MapGet("/users/{id}", GetUserById);
 async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
 {
     var user = await _db.Users.FindAsync(id);
@@ -42,27 +41,24 @@ async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
         : TypedResults.NotFound();
 };
 
-app.MapPost("/users",  CreateUser);
+app.MapPost("/users", CreateUser);
 async Task<Results<Created<User>, NotFound>> CreateUser(User user)
 {
-    var newUser = new User(
-        Guid.CreateVersion7(),
-        user.Name,
-        user.Email,
-        user.Phone,
-        user.ItemId
-    );
+    if (user is null)
+    {
+        TypedResults.NotFound();
+    }
 
-    _db.Users.Add(newUser);
+    _db.Users.Add(user!);
     await _db.SaveChangesAsync();
 
-    return newUser is not null
-        ? TypedResults.Created("/users/", newUser)
+    return user is not null
+        ? TypedResults.Created("/users/", user)
         : TypedResults.NotFound();
 };
 
-app.MapPut("/users/{id:guid}", UpdateUser);
-async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(Guid id, User user)
+app.MapPut("/users/{id}", UpdateUser);
+async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(string id, User user)
 {
     var findUser = await _db.Users.FindAsync(id);
 
@@ -75,9 +71,9 @@ async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(Guid id, User user
 
     var updateUser = new User(
         findUser.Id,
-        user.Name ?? findUser.Name,
+        user.UserName ?? findUser.UserName,
         user.Email ?? findUser.Email,
-        user.Phone ?? findUser.Phone,
+        user.PhoneNumber ?? findUser.PhoneNumber,
         user.ItemId ?? findUser.ItemId
     );
 
