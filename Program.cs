@@ -71,9 +71,9 @@ async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(string id, User us
 
     var updateUser = new User(
         findUser.Id,
-        user.UserName ?? findUser.UserName,
-        user.Email ?? findUser.Email,
-        user.PhoneNumber ?? findUser.PhoneNumber,
+        user.UserName ?? findUser.UserName ?? string.Empty,
+        user.Email ?? findUser.Email ?? string.Empty,
+        user.PhoneNumber ?? findUser.PhoneNumber ?? string.Empty,
         user.ItemId ?? findUser.ItemId
     );
 
