@@ -9,6 +9,5 @@ namespace foundWhatYouLost.Services
     public interface IUserRegistrationService
     {
         Task<UserRegistrationResponse> RegisterUser(UserRegistrationRequest request);
-
     }
 }

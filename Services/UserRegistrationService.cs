@@ -18,7 +18,7 @@ namespace foundWhatYouLost.Services
 
         public async Task<UserRegistrationResponse> RegisterUser(UserRegistrationRequest request)
         {
-            var newUser = new User {Name = request.Name, UserName = request.UserName, PhoneNumber = request.PhoneNumber, Email = request.Email};
+            var newUser = new User {Name = request.Name, UserName = request.Email, PhoneNumber = request.PhoneNumber, Email = request.Email};
 
             var result = await _userManager.CreateAsync(newUser, request.Password);
 
