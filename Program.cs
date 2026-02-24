@@ -6,6 +6,8 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using foundWhatYouLost.Services;
+using foundWhatYouLost.DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +35,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             )
         };
     });
+
+builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
 
 var app = builder.Build();
 
@@ -62,19 +66,24 @@ async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
 };
 
 app.MapPost("/users", CreateUser);
-async Task<Results<Created<User>, NotFound>> CreateUser(User user)
+async Task<Results<Created<UserRegistrationResponse>, NotFound>> CreateUser(IUserRegistrationService _userServices, UserRegistrationRequest userRegistration)
 {
-    if (user is null)
-    {
-        TypedResults.NotFound();
-    }
+    var result = await _userServices.RegisterUser(userRegistration);
 
-    _db.Users.Add(user!);
-    await _db.SaveChangesAsync();
+    return TypedResults.Created("/user", result);
+    //     ? TypedResults.Created("/users", userRegistration)
+    //     : TypedResults.NotFound()
+    // if (_userRegistration is null)
+    // {
+    //     TypedResults.NotFound();
+    // }
 
-    return user is not null
-        ? TypedResults.Created("/users/", user)
-        : TypedResults.NotFound();
+    // _db.Users.Add(user!);
+    // await _db.SaveChangesAsync();
+
+    // return user is not null
+    //     ? TypedResults.Created("/users/", user)
+    //     : TypedResults.NotFound();
 };
 
 app.MapPut("/users/{id}", UpdateUser);
@@ -91,6 +100,7 @@ async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(string id, User us
 
     var updateUser = new User(
         findUser.Id,
+        user.Name = findUser.Name ?? string.Empty,
         user.UserName ?? findUser.UserName ?? string.Empty,
         user.Email ?? findUser.Email ?? string.Empty,
         user.PhoneNumber ?? findUser.PhoneNumber ?? string.Empty,
