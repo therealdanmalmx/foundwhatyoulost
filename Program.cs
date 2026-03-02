@@ -37,6 +37,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddScoped<IUserRegistrationService, UserRegistrationService>();
+builder.Services.AddScoped<IUserLoginService, UserLoginService>();
 
 var app = builder.Build();
 
@@ -65,26 +66,31 @@ async Task<Results<Ok<User>, NotFound>> GetUserById(Guid id)
         : TypedResults.NotFound();
 };
 
-app.MapPost("/users", CreateUser);
-async Task<Results<Created<UserRegistrationResponse>, NotFound>> CreateUser(IUserRegistrationService _userServices, UserRegistrationRequest userRegistration)
+app.MapPost("/users/register", CreateUser);
+async Task<Results<Created<UserRegistrationResponse>, BadRequest<UserRegistrationResponse>>> CreateUser(IUserRegistrationService _userServices, UserRegistrationRequest userRegistration)
 {
     var result = await _userServices.RegisterUser(userRegistration);
 
+    if (!result.isSuccessful)
+    {
+        return TypedResults.BadRequest(new UserRegistrationResponse(false, result.Errors));
+    }
+
     return TypedResults.Created("/user", result);
-    //     ? TypedResults.Created("/users", userRegistration)
-    //     : TypedResults.NotFound()
-    // if (_userRegistration is null)
-    // {
-    //     TypedResults.NotFound();
-    // }
-
-    // _db.Users.Add(user!);
-    // await _db.SaveChangesAsync();
-
-    // return user is not null
-    //     ? TypedResults.Created("/users/", user)
-    //     : TypedResults.NotFound();
 };
+
+app.MapPost("/users/login", LoginUser);
+async Task<Results<Ok<UserLoginResponse>, BadRequest<UserLoginResponse>>> LoginUser(IUserLoginService _loginService, UserLoginRequest request)
+{
+    var result = await _loginService.LoginUser(request);
+
+    if (!result.IsSuccessful)
+    {
+        return TypedResults.BadRequest(new UserLoginResponse(false, result.Errors));
+    }
+
+    return TypedResults.Ok(result);
+}
 
 app.MapPut("/users/{id}", UpdateUser);
 async Task<Results<Ok<User>, NotFound, NoContent>> UpdateUser(string id, User user)
