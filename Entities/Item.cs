@@ -8,5 +8,5 @@ public record Item (
     string? Photo,
     string? Title,
     string? Description,
-    int? UserId
+    string? UserId
 );
